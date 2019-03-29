@@ -1,0 +1,50 @@
+#!/usr/share/rvm/rubies/ruby-2.6.0/bin/ruby
+require 'json'
+
+jvm_home = `echo $JVM_HOME`.strip
+symbolic_links = "#{jvm_home}/symbolic_links"
+config_file = "#{jvm_home}/jvm_config.json"
+config = JSON.parse(File.read(config_file))
+current_version = config["current_version"]
+link_map = config["link_map"]
+
+input = ARGV[0]
+if input
+  input = input.to_s
+  if input == current_version
+    puts "You are already using verison: #{current_version}"
+    exit
+  end
+
+  new_verion_home_link = link_map[input + ' home']
+  new_version_build_link = link_map[input + ' build']
+
+  if new_verion_home_link
+
+    current_home_link = "#{symbolic_links}/current_java_home"
+    current_build_link = "#{symbolic_links}/current_java"
+    home_link = link_map[current_version + ' home'] 
+    build_link = link_map[current_version + ' build']
+
+    `mv #{current_home_link} #{home_link}`
+    `mv #{current_build_link} #{build_link}`
+
+    `mv #{new_verion_home_link} #{current_home_link}`
+    `mv #{new_version_build_link} #{current_build_link}`
+
+    config["current_version"] = input
+
+    File.open(config_file, 'w') { |f| f.write(JSON.pretty_generate(config)) }
+    puts "You are now using Java #{input}"
+
+  else
+    puts "The version - #{input} - is not installed. Available versions include: #{versions.keys}"
+  end
+
+else
+  versions = config["version_map"]
+  output = versions.map {|k,v| "  #{k} => #{v}"}
+  puts "Versions: "
+  puts output
+  puts "Java currently set to: #{current_version}"
+end

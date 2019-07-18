@@ -1,5 +1,18 @@
-#!/usr/share/rvm/rubies/ruby-2.6.0/bin/ruby
+#!/home/will/.rbenv/shims/ruby
 require 'json'
+
+def fetch_home_link(version, jvm_home, link_map)
+  fetch_link(version + ' home', jvm_home, link_map)
+end
+
+def fetch_build_link(version, jvm_home, link_map)
+  fetch_link(version + ' build', jvm_home, link_map)
+end
+
+def fetch_link(key, jvm_home, link_map)
+  jvm_home + '/symbolic_links/' + link_map[key]
+end
+
 
 jvm_home = `echo $JVM_HOME`.strip
 symbolic_links = "#{jvm_home}/symbolic_links"
@@ -16,15 +29,15 @@ if input
     exit
   end
 
-  new_verion_home_link = link_map[input + ' home']
-  new_version_build_link = link_map[input + ' build']
+  new_verion_home_link = fetch_home_link(input, jvm_home, link_map)
+  new_version_build_link = fetch_build_link(input, jvm_home, link_map)
 
   if new_verion_home_link
 
     current_home_link = "#{symbolic_links}/current_java_home"
     current_build_link = "#{symbolic_links}/current_java"
-    home_link = link_map[current_version + ' home'] 
-    build_link = link_map[current_version + ' build']
+    home_link = fetch_home_link(current_version, jvm_home, link_map)
+    build_link = fetch_build_link(current_version, jvm_home, link_map)
 
     `mv #{current_home_link} #{home_link}`
     `mv #{current_build_link} #{build_link}`

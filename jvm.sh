@@ -86,7 +86,7 @@ showUseHelp () {
 }
 
 showSetupHelp () {
-  echo "JVM Help: seup
+  echo "JVM Help: setup
 
   Description:
     Creates the JVM home directory and related folders if they do not exist.
@@ -109,12 +109,12 @@ showLinkHelp () {
 
     Args:
       <java_home> The path to the home directory of the java version to add a link to
-      <version> What you want to name the java version
+      <version>   coWhat you want to name the java version
 "
 }
 
-showSetupHelp () {
-  echo "JVM Help: setup
+showInitHelp () {
+  echo "JVM Help: init
 
   Description:
     Initializes JVM.
@@ -130,7 +130,8 @@ showGeneralHelp () {
   Description:
     Information on how to use JVM.
 
-  Usage: jvm <command> [<args>]
+  Usage:
+    jvm <command> [<args>]
 
   Commands:
     install      Installs a java version
@@ -138,7 +139,20 @@ showGeneralHelp () {
     link         Adds a reference to a installed java version
     init         Initialize JVM
     setup        Sets up your JVM home directory
-    help         Displays the page you are currently viewing
+    help         Displays helpful information about JVM
+
+  JVM Help Command:
+    Description:
+      Displays the information you are currently viewing or information about a specific command.
+
+    Usages:
+      jvm help
+      jvm h
+      jvm help <command>
+      jvm h <c>
+
+      Args:
+        <command> Provides information about the command when supplied.
 "
 }
 

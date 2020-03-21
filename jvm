@@ -126,7 +126,7 @@ showInitHelp () {
     Initializes JVM.
 
   Usages:
-    Add 'eval \"source jvm init\"' to your shell profile.
+    Add 'source jvm init' to your shell profile.
 "
 }
 
@@ -208,6 +208,7 @@ setJVMHome () {
   fi
 }
 
+# Sets the location of the .java_version file
 setJVMVersionFile () {
   JVM_VERSION_FILE="$JVM_HOME/.java_version"
 }
@@ -223,15 +224,17 @@ setCurrentJavaVersion () {
   JVM_CURRENT_VERSION=`cat "$JVM_HOME/.java_version"`
 }
 
-
+# Sets the location of the symlinks java home directory
 setSymlinksHomeDir () {
   JVM_SYMLINK_HOME_DIR="$JVM_HOME/symlinks/home"
 }
 
+# Sets the location of the symlinks java build directory
 setSymlinksBuildDir () {
   JVM_SYMLINK_BUILD_DIR="$JVM_HOME/symlinks/build"
 }
 
+# Sets the location of the sylinks current java directory
 setSymlinksCurrentDir () {
   JVM_SYMLINK_CURRENT_DIR="$JVM_HOME/current"
 }
@@ -362,6 +365,7 @@ linkJavaVersion () {
   logSuccess "Added version '$VERSION_NAME'"
 }
 
+# TODO: Install java versions
 installJavaVersion () {
   logError "Installation is under construction. You can install a java version yourself, and then register it to JVM using `jvm link`"
 
@@ -380,6 +384,7 @@ checkJavaHomeVar () {
   fi
 }
 
+# Updates $PATH to include JVM's symlink to the current java build
 addJavaToPath () {
   JVM_PATH_ENTRY=`echo $PATH | tr ':' '\n' | grep "$JVM_SYMLINK_CURRENT_DIR"`
   if [ ! $JVM_PATH_ENTRY ]; then

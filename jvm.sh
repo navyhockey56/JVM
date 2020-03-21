@@ -39,9 +39,141 @@ logSuccess() {
   fi
 }
 
-# TODO: add help...
+
+########################################################
+# Help Info
+
+showInstallHelp () {
+  echo "JVM Help: install
+
+  Description:
+    Installs the specified version of java.
+
+  Usages:
+    jvm install <version>
+    jvm i <version>
+
+    Args:
+      <version> The name of the java version to use
+"
+}
+
+showVersionHelp () {
+  echo "JVM Help: version
+
+  Description:
+    Specifies the current version of java JVM is using.
+
+  Usages:
+    jvm version
+    jvm v
+"
+}
+
+showUseHelp () {
+  echo "JVM Help: use
+
+  Description:
+    Switches JVM to use the specified java version
+
+  Usages:
+    jvm use <version>
+    jvm u <version>
+
+    Args:
+      <version> The name of the java version to use
+"
+}
+
+showSetupHelp () {
+  echo "JVM Help: seup
+
+  Description:
+    Creates the JVM home directory and related folders if they do not exist.
+
+  Usages:
+    jvm setup
+    jvm s
+"
+}
+
+showLinkHelp () {
+  echo "JVM Help: link
+
+  Description:
+    Adds an installed java version to JVM
+
+  Usages:
+    jvm link <java_home> <version>
+    jvm link <java_home> <version>
+
+    Args:
+      <java_home> The path to the home directory of the java version to add a link to
+      <version> What you want to name the java version
+"
+}
+
+showSetupHelp () {
+  echo "JVM Help: setup
+
+  Description:
+    Initializes JVM.
+
+  Usages:
+    Add 'eval \"source jvm init\"' to your shell profile.
+"
+}
+
+showGeneralHelp () {
+  echo "JVM Help
+
+  Description:
+    Information on how to use JVM.
+
+  Usage: jvm <command> [<args>]
+
+  Commands:
+    install      Installs a java version
+    version      Output the current java version
+    link         Adds a reference to a installed java version
+    init         Initialize JVM
+    setup        Sets up your JVM home directory
+    help         Displays the page you are currently viewing
+"
+}
+
+# Display help information
 showHelp () {
-  logInfo "Not very helpful, am I?"
+
+  case $1 in
+    i | install)
+      showInstallHelp
+    ;;
+
+    v | version)
+      showVersionHelp
+    ;;
+
+    u | use)
+      showUseHelp
+    ;;
+
+    s | setup)
+      showSetupHelp
+    ;;
+
+    l | link)
+      showLinkHelp
+    ;;
+
+    init)
+      showInitHelp
+    ;;
+
+    *)
+      showGeneralHelp
+    ;;
+  esac
 }
 
 ########################################################
@@ -212,9 +344,9 @@ installJavaVersion () {
 # Warns users if their JAVA_HOME is misconfigured
 checkJavaHomeVar () {
   if [ ! $JAVA_HOME ]; then
-    logWarn "The JAVA_HOME environment variable is not set. This may cause java version problems with maven. Add \`JAVA_HOME=\$JVM_HOME/current/java_home\` to your shell profile to fix this.\n"
-  elif [ $JAVA_HOME != "$JVM_HOME/current/java_home" ]; then
-    logWarn "The JAVA_HOME environment variable is set to $JAVA_HOME. This may cause java version problems with maven. Add \`JAVA_HOME=\$JVM_HOME/current/java_home\` to your shell profile to fix this.\n"
+    logWarn "The JAVA_HOME environment variable is not set. Add 'eval \"source jvm init\"' to your shell profile to fix this.\n"
+  elif [ $JAVA_HOME != "$JVM_SYMLINK_CURRENT_DIR/java_home" ]; then
+    logWarn "The JAVA_HOME environment variable is set to $JAVA_HOME. This may cause java version problems with maven. Add 'eval \"source jvm init\"' to your shell profile. to fix this.\n"
   fi
 }
 
@@ -269,7 +401,7 @@ case $ACTION in
   ;;
 
   h | help)
-    showHelp
+    showHelp $2
   ;;
 
   u | use)

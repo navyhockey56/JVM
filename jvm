@@ -67,6 +67,12 @@ showVersionHelp () {
   Usages:
     jvm version
     jvm v
+
+    jvm version -l
+    jvm v -l
+
+    Flags:
+      -l  Also print out all java versions JVM is managing
 "
 }
 
@@ -266,6 +272,8 @@ setSymlinkBuild() {
   fi
 }
 
+# Exports the $JAVA_HOME enviroment variable to keep other
+# tools like Maven in-sync with JVM's java version
 setJavaHome () {
   export JAVA_HOME="$JVM_SYMLINK_CURRENT_DIR/java_home"
 }
@@ -276,7 +284,15 @@ setJavaHome () {
 # Prints the java version
 printJavaVersion () {
   setCurrentJavaVersion
-  logInfo "You are using: $JVM_CURRENT_VERSION"
+  logInfo "You are currently using: $JVM_CURRENT_VERSION"
+
+  # Print out all versions if the `-l` flag was specified
+  if [ "$1" = "-l" ]; then
+    VERSIONS=`ls $JVM_SYMLINK_BUILD_DIR | sed "s/^.*$/ - &/g"`
+    echo
+    echo "Other Java versions installed:"
+    echo -e "$VERSIONS"
+  fi
 }
 
 
@@ -411,7 +427,7 @@ case $ACTION in
   ;;
 
   v | version)
-    printJavaVersion
+    printJavaVersion $2
   ;;
 
   h | help)

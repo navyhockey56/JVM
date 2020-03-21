@@ -1,26 +1,42 @@
 #!/bin/bash
 
+########################################################
+# Logging Functions
+
+# Removes color from echo statements
 NO_COLOR='\033[31;0m'
 
+if [ "$1" = "init" ]; then
+  LOG_ERROR_ONLY="true"
+else
+  LOG_ERROR_ONLY="false"
+fi
+
 logInfo() {
-  echo -e "> $1"
+  if [ "$LOG_ERROR_ONLY" = "false" ]; then
+    echo -e "> $1"
+  fi
 }
 
 logError () {
-  RED='\e[91m'    # print text in bold red
+  RED='\e[91m'
 
   echo -e "${RED}> $1${NO_COLOR}"
 }
 
 logWarn() {
-  YEL='\e[93m'    # print text in bold Yellow
+  YEL='\e[93m'
 
-  echo -e "${YEL}> $1${NO_COLOR}"
+  if [ "$LOG_ERROR_ONLY" = "false" ]; then
+    echo -e "${YEL}> $1${NO_COLOR}"
+  fi
 }
 
 logSuccess() {
   GREEN='\e[92m'
-  echo -e "${GREEN}> $1${NO_COLOR}"
+  if [ "$LOG_ERROR_ONLY" = "false" ]; then
+    echo -e "${GREEN}> $1${NO_COLOR}"
+  fi
 }
 
 # TODO: add help...
@@ -28,12 +44,26 @@ showHelp () {
   logInfo "Not very helpful, am I?"
 }
 
+########################################################
+# Setters
+
+# Sets the JVM home directory to ~/.jvm if it's
+# not otherwise specified
+setJVMHome () {
+  if [ ! $JVM_HOME ]; then
+    export JVM_HOME="$HOME/.jvm"
+    logWarn "JVM_HOME is not set. Defaulting to $JVM_HOME\n"
+  fi
+}
+
+setJVMVersionFile () {
+  JVM_VERSION_FILE="$JVM_HOME/.java_version"
+}
+
 # Retrieves the current java version accorinding to
 # the .java_version file
-currentVersion () {
-  setJVMHome
-
-  if [ ! -e "$JVM_HOME/.java_version" ]; then
+setCurrentJavaVersion () {
+  if [ ! -e $JVM_VERISON_FILE ]; then
     logError "You have not yet set a java version."
     exit 1
   fi
@@ -41,32 +71,17 @@ currentVersion () {
   JVM_CURRENT_VERSION=`cat "$JVM_HOME/.java_version"`
 }
 
-# Prints the java version
-printVersion () {
-  currentVersion
-  logInfo "You are using: $JVM_CURRENT_VERSION"
+
+setSymlinksHomeDir () {
+  JVM_SYMLINK_HOME_DIR="$JVM_HOME/symlinks/home"
 }
 
-# Sets the JVM home directory to ~/.jvm if it's
-# not otherwise specified
-setJVMHome () {
-  if [ ! $JVM_HOME ]; then
-    JVM_HOME="$HOME/.jvm"
-    logWarn "JVM_HOME is not set. Defaulting to $JVM_HOME\n"
-  fi
+setSymlinksBuildDir () {
+  JVM_SYMLINK_BUILD_DIR="$JVM_HOME/symlinks/build"
 }
 
-# Creates the JVM home directory and all it's structure
-# if they do not yet exist.
-setupJVM () {
-  setJVMHome
-
-  mkdir -p $JVM_HOME
-  mkdir -p "$JVM_HOME/symlinks/home"
-  mkdir -p "$JVM_HOME/symlinks/build"
-  mkdir -p "$JVM_HOME/current"
-
-  logSuccess "Setup of JVM complete. Your JVM home directory is: $JVM_HOME"
+setSymlinksCurrentDir () {
+  JVM_SYMLINK_CURRENT_DIR="$JVM_HOME/current"
 }
 
 # Sets the $JVM_SYMLINK_HOME variable to the path to the
@@ -81,7 +96,7 @@ setSymlinkHome() {
     exit 1
   fi
 
-  JVM_SYMLINK_HOME="$JVM_HOME/symlinks/home/$1"
+  JVM_SYMLINK_HOME="$JVM_SYMLINK_HOME_DIR/$1"
   if [ ! -e $JVM_SYMLINK_HOME ]; then
     logError "Version '$1' does not have a java home symlink"
     exit 1
@@ -93,22 +108,46 @@ setSymlinkHome() {
 #
 # @param The java version (name of build symlink)
 setSymlinkBuild() {
-  setJVMHome
-
   if [ ! $1  ]; then
     logError "Version not specified"
     exit 1
   fi
 
-  JVM_SYMLINK_BUILD="$JVM_HOME/symlinks/build/$1"
+  JVM_SYMLINK_BUILD="$JVM_SYMLINK_BUILD_DIR/$1"
   if [ ! -e $JVM_SYMLINK_BUILD ]; then
     logError "Version '$1' does not have a java build symlink"
     exit 1
   fi
 }
 
-# Updates the current jvm java version
-setVersion () {
+setJavaHome () {
+  export JAVA_HOME="$JVM_SYMLINK_CURRENT_DIR/java_home"
+}
+
+########################################################
+# Actions
+
+# Prints the java version
+printJavaVersion () {
+  setCurrentJavaVersion
+  logInfo "You are using: $JVM_CURRENT_VERSION"
+}
+
+
+# Creates the JVM home directory and all it's structure
+# if they do not yet exist.
+setupJVM () {
+  mkdir -p $JVM_HOME
+  mkdir -p $JVM_SYMLINK_HOME_DIR
+  mkdir -p $JVM_SYMLINK_BUILD_DIR
+  mkdir -p $JVM_SYMLINK_CURRENT_DIR
+
+  logSuccess "Setup of JVM complete. Your JVM home directory is: $JVM_HOME"
+}
+
+
+# Updates the current jvm java version in use
+useJavaVersion () {
   VERSION=$1
   if [ ! $VERSION ]; then
     logError "You must specify a version to use"
@@ -118,10 +157,10 @@ setVersion () {
   setSymlinkHome $VERSION
   setSymlinkBuild $VERSION
 
-  rm -f "$JVM_HOME/current/java_home"
+  rm -f "$JVM_SYMLINK_CURRENT_DIR/java_home"
   cp -P $JVM_SYMLINK_HOME "$JVM_HOME/current/java_home"
 
-  rm -f "$JVM_HOME/current/java"
+  rm -f "$JVM_SYMLINK_CURRENT_DIR/java"
   cp -P $JVM_SYMLINK_BUILD "$JVM_HOME/current/java"
 
   echo $VERSION > "$JVM_HOME/.java_version"
@@ -130,7 +169,7 @@ setVersion () {
 }
 
 # Registers a new java version with jvm
-linkJava () {
+linkJavaVersion () {
   JVM_JAVA_HOME=$1
   if [ ! -d $JVM_JAVA_HOME ]; then
     logError "$JVM_JAVA_HOME is not a directory"
@@ -150,23 +189,27 @@ linkJava () {
   fi
 
   if [ -e $VERSION_NAME ]; then
-    logError "The version $VERSION_NAME already exists"
+    logError "The version '$VERSION_NAME' already exists"
     exit 1
   fi
 
   setJVMHome
-  ln -s $JVM_JAVA_HOME "$JVM_HOME/symlinks/home/$VERSION_NAME"
-  ln -s $JVM_JAVA_BUILD "$JVM_HOME/symlinks/build/$VERSION_NAME"
+  ln -s $JVM_JAVA_HOME "$JVM_SYMLINK_HOME_DIR/$VERSION_NAME"
+  ln -s $JVM_JAVA_BUILD "$JVM_SYMLINK_BUILD_DIR/$VERSION_NAME"
 
   logSuccess "Added version '$VERSION_NAME'"
 }
 
-installVersion () {
+installJavaVersion () {
   logError "Installation is under construction. You can install a java version yourself, and then register it to JVM using `jvm link`"
 
   exit 1
 }
 
+########################################################
+# Initialization of JVM
+
+# Warns users if their JAVA_HOME is misconfigured
 checkJavaHomeVar () {
   if [ ! $JAVA_HOME ]; then
     logWarn "The JAVA_HOME environment variable is not set. This may cause java version problems with maven. Add \`JAVA_HOME=\$JVM_HOME/current/java_home\` to your shell profile to fix this.\n"
@@ -175,20 +218,54 @@ checkJavaHomeVar () {
   fi
 }
 
-###########
+addJavaToPath () {
+  JVM_PATH_ENTRY=`echo $PATH | tr ':' '\n' | grep "$JVM_SYMLINK_CURRENT_DIR"`
+  if [ ! $JVM_PATH_ENTRY ]; then
+    PATH="$JVM_SYMLINK_CURRENT_DIR:$PATH"
+  fi
+}
+
+# Initializes all the variables need to perform the actions.
+initJVM() {
+  # Set all the variables
+  setJVMHome
+  setJVMVersionFile
+  setSymlinksHomeDir
+  setSymlinksBuildDir
+  setSymlinksCurrentDir
+
+  # Set the JAVA_HOME & PATH when `jvm init` is explicitly called
+  if [ "$1" = "init" ]; then
+    # Save the JAVA_HOME variable for maven
+    setJavaHome
+
+    addJavaToPath
+
+    # Create JVM directories if they don't yet exist
+    setupJVM
+  fi
+
+  # Check if JAVA_HOME is configured correctly.
+  checkJavaHomeVar
+}
+
+########################################################
 # Begin Script
 
-checkJavaHomeVar
-
+# The user's action should always be the first arg
 ACTION=$1
 
+# Initialize JVM
+initJVM $ACTION
+
+# Perform the requested action
 case $ACTION in
   i | install)
-    installVersion $2
+    installJavaVersion $2
   ;;
 
   v | version)
-    printVersion
+    printJavaVersion
   ;;
 
   h | help)
@@ -196,7 +273,7 @@ case $ACTION in
   ;;
 
   u | use)
-    setVersion $2
+    useJavaVersion $2
   ;;
 
   s | setup)
@@ -204,11 +281,15 @@ case $ACTION in
   ;;
 
   l | link)
-    linkJava $2 $3
+    linkJavaVersion $2 $3
+  ;;
+
+  init)
+    # Already initialized
   ;;
 
   *)
-    logError "Unknown action: '$ACTION'\n"
+    logError "Unknown action '$ACTION'\n"
     showHelp
   ;;
 esac
